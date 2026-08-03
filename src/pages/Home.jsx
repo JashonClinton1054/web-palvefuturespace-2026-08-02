@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { motion, useAnimation } from "framer-motion";
+import { motion } from "framer-motion";
 
 const Wrapper = styled.div`
   width: 100vw;
@@ -207,12 +207,21 @@ const cardVariants = {
 
 export default function Home() {
   const navigate = useNavigate();
-  const controls = useAnimation();
-  // 【内嵌滚动高亮逻辑，不再依赖外部hooks文件】
+  // 视频延迟播放：首页先展示封面，3秒后启动视频，减少初始带宽抢占
+  const [videoPlayEnabled, setVideoPlayEnabled] = useState(false);
   const [activeSection, setActiveSection] = useState("");
   const sectionIds = ["hero", "works"];
   const offset = 150;
 
+  // 视频延迟计时器
+  useEffect(()=>{
+    const videoTimer = setTimeout(()=>{
+      setVideoPlayEnabled(true);
+    }, 3000);
+    return ()=>clearTimeout(videoTimer);
+  },[])
+
+  // 滚动导航高亮
   useEffect(()=>{
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -268,10 +277,6 @@ export default function Home() {
     }
   ]
 
-  useEffect(()=>{
-    controls.start("enter");
-  },[controls])
-
   return (
     <Wrapper>
       <Header as={motion.header} variants={headerVariants} initial="hidden" animate="enter">
@@ -290,7 +295,14 @@ export default function Home() {
 
       <HeroSection id="hero">
         <VideoCover>
-          <video muted loop playsInline poster="/assets/video-cover.jpg">
+          <video 
+            muted 
+            loop 
+            playsInline 
+            preload="metadata"
+            poster="/assets/video-cover.jpg"
+            autoPlay={videoPlayEnabled}
+          >
             <source src="/assets/bg-video.mp4" type="video/mp4"/>
           </video>
         </VideoCover>

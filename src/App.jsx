@@ -15,7 +15,7 @@ import MbtiPage from './pages/MbtiPage'
 
 // 需要预加载的全部静态资源清单
 const assetList = [
-  "/assets/bg-video.mp4",
+  //"/assets/bg-video.mp4", //视频永久移出预加载，首页延迟加载
   "/assets/video-cover.jpg",
   "/assets/loading-game-art.jpg",
   "/assets/work-01.jpg",
@@ -44,16 +44,31 @@ function App() {
 
     const loadAsset = (src) => {
       return new Promise((resolve) => {
+        // 单资源1.5秒超时兜底，防止单张图片卡死全部进度
+        const timeout = setTimeout(() => resolve(), 1500);
+
         if(src.endsWith(".mp4")){
           const video = document.createElement("video");
           video.src = src;
-          video.onloadeddata = resolve;
-          video.onerror = resolve;
+          video.onloadeddata = ()=>{
+            clearTimeout(timeout);
+            resolve();
+          };
+          video.onerror = ()=>{
+            clearTimeout(timeout);
+            resolve();
+          };
         }else{
           const img = new Image();
           img.src = src;
-          img.onload = resolve;
-          img.onerror = resolve;
+          img.onload = ()=>{
+            clearTimeout(timeout);
+            resolve();
+          };
+          img.onerror = ()=>{
+            clearTimeout(timeout);
+            resolve();
+          };
         }
       }).then(()=>{
         loadedCount++;

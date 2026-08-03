@@ -746,7 +746,7 @@ export default function MbtiPage () {
             <ResultCard initial={{opacity:0,y:30}} animate={{opacity:1,y:0}}>
               <AvatarWrap>
                 <img
-                  src={`/assets/MbtiPage/${typeCode}.png`}
+                  src={`/assets/MbtiPage/${typeCode}.jpg`}
                   alt={typeCode}
                   onError={(e)=>{
                     e.target.style.display="none";

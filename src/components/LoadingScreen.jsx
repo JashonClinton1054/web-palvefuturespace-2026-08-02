@@ -99,6 +99,8 @@ const ProgressText = styled.span`
 
 export default function LoadingScreen({ progress, loaded, onComplete }) {
   const [canClose, setCanClose] = useState(false);
+  // 最大加载超时：8秒，防止资源卡死永久停留加载页
+  const MAX_LOAD_TIMEOUT = 8000;
 
   useEffect(() => {
     // 最低停留2200ms
@@ -106,12 +108,20 @@ export default function LoadingScreen({ progress, loaded, onComplete }) {
       setCanClose(true);
     }, 2200);
 
-    return () => clearTimeout(minDisplayTime);
+    // 兜底超时：8秒强制允许关闭加载界面
+    const forceTimeout = setTimeout(() => {
+      setCanClose(true);
+    }, MAX_LOAD_TIMEOUT);
+
+    return () => {
+      clearTimeout(minDisplayTime);
+      clearTimeout(forceTimeout);
+    };
   }, []);
 
   useEffect(() => {
-    // 资源加载完成 + 最低等待时间结束，才允许退场
-    if (loaded && canClose) {
+    // 资源加载完成 OR 超时到达 + 最低等待时间结束，才允许退场
+    if ((loaded || canClose) && canClose) {
       setTimeout(() => {
         onComplete();
       }, 1100);
@@ -121,7 +131,7 @@ export default function LoadingScreen({ progress, loaded, onComplete }) {
   return (
     <LoaderWrap
       initial={{ y: 0 }}
-      animate={loaded && canClose ? { y: "-100%" } : { y: 0 }}
+      animate={(loaded || canClose) && canClose ? { y: "-100%" } : { y: 0 }}
       transition={{ duration: 1.2, ease: [0.76, 0, 0.24, 1] }}
     >
       <FontInject />
