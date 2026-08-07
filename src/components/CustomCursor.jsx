@@ -22,7 +22,7 @@ export default function CustomCursor(){
     if(!canUseCursor)return undefined;
 
     const mouseMove=(event)=>setMousePos({x:event.clientX,y:event.clientY});
-    const pointerOver=(event)=>setIsHover(Boolean(event.target.closest("button,a,[role=''button''],input,select,textarea")));
+    const pointerOver=(event)=>setIsHover(Boolean(event.target.closest("button,a,[role=button],input,select,textarea")));
     window.addEventListener("mousemove",mouseMove,{passive:true});
     document.addEventListener("pointerover",pointerOver,{passive:true});
     return()=>{
