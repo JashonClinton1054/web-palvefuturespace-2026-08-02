@@ -1,14 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+﻿import { useEffect, useRef } from "react";
 import styled from "styled-components";
 
 const ParticleCanvas = styled.canvas`
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 9998;
-  @media (max-width:768px){
-    display:none;
-  }
+  pointer-events: none; position: fixed; inset: 0; z-index: 9998;
+  @media (max-width:768px), (pointer:coarse), (prefers-reduced-motion:reduce){display:none;}
 `;
 
 export default function MouseParticles() {
@@ -16,26 +11,27 @@ export default function MouseParticles() {
   const particles = useRef([]);
 
   useEffect(() => {
+    const finePointer = window.matchMedia("(pointer: fine)").matches;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!finePointer || reducedMotion || window.innerWidth <= 768) return undefined;
+
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    let w = canvas.width = window.innerWidth;
-    let h = canvas.height = window.innerHeight;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return undefined;
+
+    let frameId;
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
 
     class Particle {
       constructor(x, y) {
-        this.x = x;
-        this.y = y;
+        this.x = x; this.y = y;
         this.radius = Math.random() * 2 + 1;
         this.alpha = 0.6;
         this.vx = (Math.random() - 0.5) * 0.8;
         this.vy = (Math.random() - 0.5) * 0.8;
-        this.decay = 0.012;
       }
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.alpha -= this.decay;
-      }
+      update() { this.x += this.vx; this.y += this.vy; this.alpha -= 0.012; }
       draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -44,34 +40,36 @@ export default function MouseParticles() {
       }
     }
 
-    const spawn = (e) => {
-      particles.current.push(new Particle(e.clientX, e.clientY));
-      // 限制最大粒子数量防止卡顿
-      if (particles.current.length > 80) particles.current.shift();
+    const spawn = (event) => {
+      particles.current.push(new Particle(event.clientX, event.clientY));
+      if (particles.current.length > 64) particles.current.shift();
     };
-
+    const resize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
     const animate = () => {
-      ctx.clearRect(0, 0, w, h);
-      for (let i = particles.current.length - 1; i >= 0; i--) {
-        const p = particles.current[i];
-        p.update();
-        p.draw();
-        if (p.alpha <= 0) particles.current.splice(i, 1);
+      ctx.clearRect(0, 0, width, height);
+      for (let index = particles.current.length - 1; index >= 0; index -= 1) {
+        const particle = particles.current[index];
+        particle.update();
+        particle.draw();
+        if (particle.alpha <= 0) particles.current.splice(index, 1);
       }
-      requestAnimationFrame(animate);
+      frameId = window.requestAnimationFrame(animate);
     };
 
-    window.addEventListener("mousemove", spawn);
-    window.addEventListener("resize", () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    });
+    window.addEventListener("mousemove", spawn, { passive: true });
+    window.addEventListener("resize", resize, { passive: true });
     animate();
 
     return () => {
+      window.cancelAnimationFrame(frameId);
       window.removeEventListener("mousemove", spawn);
+      window.removeEventListener("resize", resize);
+      particles.current = [];
     };
   }, []);
 
-  return <ParticleCanvas ref={canvasRef} />;
+  return <ParticleCanvas ref={canvasRef} aria-hidden="true" />;
 }

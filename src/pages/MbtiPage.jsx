@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+﻿import SubpageBackButton from "../components/SubpageBackButton";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +9,15 @@ const Wrapper = styled.div`
   width: 100vw;
   min-height: 100vh;
   overflow-x: hidden;
-  background: #06060c;
+  background-color: #05050a;
+  background-image:
+    linear-gradient(180deg, rgba(5, 5, 10, 0.68), rgba(5, 5, 10, 0.93)),
+    linear-gradient(90deg, rgba(239, 214, 162, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(239, 214, 162, 0.025) 1px, transparent 1px),
+    url("/assets/bg-banner.jpg");
+  background-position: center, center, center, center top;
+  background-size: auto, 72px 72px, 72px 72px, cover;
+  background-attachment: fixed;
   color: #ffffff;
   padding: 120px 20px 60px;
   @media(max-width:768px){
@@ -682,6 +691,7 @@ export default function MbtiPage () {
             <PageTitle initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.6}}>
               MBTI · 十六人格测试
             </PageTitle>
+            <SubpageBackButton />
             <SubText initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.3}}>
               PaL,ve.Future Space | 优化版64题五点量表，探索属于你的人格原型
             </SubText>
@@ -746,6 +756,8 @@ export default function MbtiPage () {
             <ResultCard initial={{opacity:0,y:30}} animate={{opacity:1,y:0}}>
               <AvatarWrap>
                 <img
+                  loading="lazy"
+                  decoding="async"
                   src={`/assets/MbtiPage/${typeCode}.jpg`}
                   alt={typeCode}
                   onError={(e)=>{

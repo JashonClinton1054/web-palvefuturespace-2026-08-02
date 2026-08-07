@@ -1,3 +1,4 @@
+﻿import SubpageBackButton from "../components/SubpageBackButton";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -8,7 +9,15 @@ const Wrapper = styled.div`
   min-height: 100vh;
   overflow-x: hidden;
   color: #fff;
-  background: #06060c;
+  background-color: #05050a;
+  background-image:
+    linear-gradient(180deg, rgba(5, 5, 10, 0.68), rgba(5, 5, 10, 0.93)),
+    linear-gradient(90deg, rgba(239, 214, 162, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(239, 214, 162, 0.025) 1px, transparent 1px),
+    url("/assets/bg-banner.jpg");
+  background-position: center, center, center, center top;
+  background-size: auto, 72px 72px, 72px 72px, cover;
+  background-attachment: fixed;
 `;
 
 const NavBar = styled.nav`
@@ -83,9 +92,14 @@ const GridWrap = styled.div`
 `;
 
 // 和Gallery一模一样的卡片样式
-const VideoCard = styled(motion.div)`
+const VideoCard = styled(motion.button)`
   position: relative;
-  border-radius: 14px;
+  width: 100%;
+  padding: 0;
+  border-radius: 6px;
+  background: #0b0b12;
+  text-align: left;
+  color: inherit;
   overflow: hidden;
   aspect-ratio: 16 / 11;
   cursor: pointer;
@@ -105,6 +119,7 @@ const VideoCard = styled(motion.div)`
     background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 65%);
     opacity:0;
     transition: opacity 0.4s ease;
+    pointer-events: none;
   }
 
   &:hover img{
@@ -137,8 +152,14 @@ const CardLabel = styled.div`
     opacity:0.75;
   }
 
-  ${VideoCard}:hover & {
+  ${VideoCard}:hover &,
+  ${VideoCard}:focus-visible & {
     opacity:1;
+    transform: translateY(0);
+  }
+
+  @media (hover: none) {
+    opacity: 1;
     transform: translateY(0);
   }
 `;
@@ -166,12 +187,16 @@ const PlayerVideo = styled.video`
   outline: none;
 `;
 
-const CloseBtn = styled.div`
+const CloseBtn = styled.button`
   position: absolute;
   top: -40px;
   right: 0;
+  width:44px;
+  height:44px;
+  border:0;
+  background:transparent;
   color:#fff;
-  font-size:30px;
+  font-size:26px;
   cursor: pointer;
   opacity:0.7;
   transition:0.2s;
@@ -233,6 +258,7 @@ export default function AnimationHall() {
       <Container>
         <motion.div variants={staggerContainer} initial="hidden" animate="animate">
           <PageTitle variants={fadeUp}>Animation · 动画展厅</PageTitle>
+          <SubpageBackButton />
 
           <GridWrap>
             {animationList.map((item, idx) => (
@@ -241,7 +267,7 @@ export default function AnimationHall() {
                 variants={fadeUp}
                 onClick={() => setActiveVideo(item)}
               >
-                <img src={item.poster} alt={item.title} />
+                <img loading="lazy" decoding="async" src={item.poster} alt={item.title} />
                 <CardLabel>
                   <h3>{item.title}</h3>
                   <span>{item.desc}</span>
@@ -262,7 +288,7 @@ export default function AnimationHall() {
             onClick={closePlayer}
           >
             <VideoWrap onClick={(e)=>e.stopPropagation()}>
-              <CloseBtn onClick={closePlayer}>✕</CloseBtn>
+              <CloseBtn type="button" onClick={closePlayer} aria-label="关闭视频">✕</CloseBtn>
               <PlayerVideo
                 src={activeVideo.videoSrc}
                 poster={activeVideo.poster}

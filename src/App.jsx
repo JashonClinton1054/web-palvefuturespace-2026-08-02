@@ -1,110 +1,95 @@
-import { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+﻿import { useEffect, useState } from "react";
+import { BrowserRouter, useLocation } from "react-router-dom";
+import { MotionConfig } from "framer-motion";
+import AppRouter from "./router";
 import CustomCursor from "./components/CustomCursor";
-import MouseParticles from "./components/MouseParticles";
 import LoadingScreen from "./components/LoadingScreen";
+import MouseParticles from "./components/MouseParticles";
+import SpaceNavigator from "./components/SpaceNavigator";
 
-// ✅严格对应你项目真实文件名！
-import Home from './pages/Home'
-import Gallery from './pages/Gallery'
-import AnimationHall from './pages/AnimationHall'
-import About from './pages/About'
-import Project from './pages/Project'
-import GamePage from './pages/GamePage'
-import MbtiPage from './pages/MbtiPage'
-
-// 需要预加载的全部静态资源清单
-const assetList = [
-  //"/assets/bg-video.mp4", //视频永久移出预加载，首页延迟加载
-  "/assets/video-cover.jpg",
-  "/assets/loading-game-art.jpg",
+const galleryAssets = [
   "/assets/work-01.jpg",
   "/assets/work-02.jpg",
   "/assets/work-03.jpg",
   "/assets/work-04.jpg",
+  "/assets/work-05.jpg",
+  "/assets/loading-game-art.jpg",
 ];
 
-// 新建内部组件，把useLocation放进Router内部
 const RouteScrollHandler = () => {
   const location = useLocation();
-  useEffect(()=>{
-    window.scrollTo({top:0, behavior:"instant"});
-  },[location.pathname])
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [location.pathname]);
   return null;
-}
+};
+
+const loadImage = (src) => new Promise((resolve) => {
+  const image = new Image();
+  const timeout = window.setTimeout(resolve, 1800);
+  image.onload = image.onerror = () => {
+    window.clearTimeout(timeout);
+    resolve();
+  };
+  image.src = src;
+});
 
 function App() {
-  const [progress, setProgress] = useState(0);
-  const [assetsLoaded, setAssetsLoaded] = useState(false);
-  const [loaderVisible, setLoaderVisible] = useState(true);
+  const alreadyVisited = sessionStorage.getItem("palve-loader-seen") === "1";
+  const [progress, setProgress] = useState(alreadyVisited ? 100 : 0);
+  const [assetsLoaded, setAssetsLoaded] = useState(alreadyVisited);
+  const [loaderVisible, setLoaderVisible] = useState(!alreadyVisited);
 
   useEffect(() => {
-    let loadedCount = 0;
-    const total = assetList.length;
+    const criticalAssets = window.location.pathname === "/"
+      ? ["/assets/loading-game-art.jpg", "/assets/video-cover.jpg"]
+      : ["/assets/loading-game-art.jpg", "/assets/bg-banner.jpg"];
 
-    const loadAsset = (src) => {
-      return new Promise((resolve) => {
-        // 单资源1.5秒超时兜底，防止单张图片卡死全部进度
-        const timeout = setTimeout(() => resolve(), 1500);
+    if (alreadyVisited) return;
 
-        if(src.endsWith(".mp4")){
-          const video = document.createElement("video");
-          video.src = src;
-          video.onloadeddata = ()=>{
-            clearTimeout(timeout);
-            resolve();
-          };
-          video.onerror = ()=>{
-            clearTimeout(timeout);
-            resolve();
-          };
-        }else{
-          const img = new Image();
-          img.src = src;
-          img.onload = ()=>{
-            clearTimeout(timeout);
-            resolve();
-          };
-          img.onerror = ()=>{
-            clearTimeout(timeout);
-            resolve();
-          };
-        }
-      }).then(()=>{
-        loadedCount++;
-        setProgress(Math.floor((loadedCount/total)*100));
-      })
-    }
+    let completed = 0;
+    Promise.all(criticalAssets.map((src) => loadImage(src).then(() => {
+      completed += 1;
+      setProgress(Math.round((completed / criticalAssets.length) * 100));
+    }))).then(() => setAssetsLoaded(true));
+  }, [alreadyVisited]);
 
-    Promise.all(assetList.map(loadAsset)).then(()=>{
-      setAssetsLoaded(true);
-    })
-  },[])
+  useEffect(() => {
+    if (!assetsLoaded) return undefined;
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (connection?.saveData) return undefined;
+
+    const preload = () => galleryAssets.forEach((src) => {
+      const image = new Image();
+      image.decoding = "async";
+      image.src = src;
+    });
+    const idleId = "requestIdleCallback" in window
+      ? window.requestIdleCallback(preload, { timeout: 2500 })
+      : window.setTimeout(preload, 900);
+
+    return () => {
+      if ("cancelIdleCallback" in window) window.cancelIdleCallback(idleId);
+      else window.clearTimeout(idleId);
+    };
+  }, [assetsLoaded]);
+
+  const finishLoading = () => {
+    sessionStorage.setItem("palve-loader-seen", "1");
+    setLoaderVisible(false);
+  };
 
   return (
-    <>
-      {loaderVisible && (
-        <LoadingScreen
-          progress={progress}
-          loaded={assetsLoaded}
-          onComplete={() => setLoaderVisible(false)}
-        />
-      )}
+    <MotionConfig reducedMotion="user">
+      {loaderVisible && <LoadingScreen progress={progress} loaded={assetsLoaded} onComplete={finishLoading} />}
       <CustomCursor />
       <MouseParticles />
       <BrowserRouter>
         <RouteScrollHandler />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/animation" element={<AnimationHall />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/project" element={<Project />} />
-          <Route path="/game" element={<GamePage />} />
-          <Route path="/mbti" element={<MbtiPage />} />
-        </Routes>
+        <SpaceNavigator />
+        <AppRouter />
       </BrowserRouter>
-    </>
+    </MotionConfig>
   );
 }
 

@@ -1,163 +1,167 @@
-import { useEffect, useState } from "react";
-import styled from "styled-components";
-import { motion } from "framer-motion";
+﻿import { useEffect, useState } from "react";
+import styled, { keyframes } from "styled-components";
+import { motion, useReducedMotion } from "framer-motion";
 
-const FontInject = styled.div`
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap');
-  position: absolute;
-  width:0;height:0;
-  pointer-events:none;
+const drift = keyframes`
+  0% { transform: translate3d(-2%, -1%, 0) scale(1.04); }
+  50% { transform: translate3d(2%, 1%, 0) scale(1.08); }
+  100% { transform: translate3d(-2%, -1%, 0) scale(1.04); }
 `;
 
 const LoaderWrap = styled(motion.div)`
   position: fixed;
   inset: 0;
-  background: #000000;
   z-index: 999999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   overflow: hidden;
+  color: #fff5df;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(230, 197, 151, 0.16), transparent 34%),
+    radial-gradient(circle at 76% 64%, rgba(125, 175, 211, 0.12), transparent 32%),
+    #030307;
 `;
 
-// 图片外层容器，用来做相对定位
-const ArtContainer = styled.div`
-  position: relative;
-  width: 82%;
-  max-height: 68vh;
+const Backdrop = styled.div`
+  position: absolute;
+  inset: -4%;
+  background: url("/assets/loading-game-art.jpg") center / cover no-repeat;
+  filter: saturate(0.92) contrast(1.08) brightness(0.7);
+  animation: ${drift} 8s ease-in-out infinite;
 
-  @media (max-width: 768px) {
-    width: 92%;
-    max-height: 58vh;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, rgba(3, 3, 7, 0.92) 0%, rgba(3, 3, 7, 0.42) 45%, rgba(3, 3, 7, 0.82) 100%),
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 5px);
   }
 `;
 
-const LoadArt = styled(motion.img)`
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+const Panel = styled(motion.div)`
+  position: relative;
+  width: min(1120px, calc(100% - 48px));
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 48px;
+  align-items: end;
+
+  @media (max-width: 760px) {
+    width: min(100% - 32px, 520px);
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+`;
+
+const BrandBlock = styled.div`
+  text-align: left;
+`;
+
+const Eyebrow = styled(motion.p)`
+  margin: 0 0 14px;
+  color: rgba(255, 245, 223, 0.62);
+  font-size: 12px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
 `;
 
 const TitleText = styled(motion.h1)`
-  margin-top: 32px;
-  font-size: 52px;
-  font-weight: 700;
-  letter-spacing: 6px;
-  text-transform: uppercase;
-  font-family: "Cinzel Decorative", serif;
-  color: #e6c597;
-  text-shadow:
-    0 0 6px rgba(180, 110, 60, 0.65),
-    0 0 14px rgba(145, 75, 40, 0.45),
-    0 2px 3px #442212,
-    0 4px 6px rgba(0,0,0,0.8);
+  margin: 0;
+  max-width: 760px;
+  font-family: "Cinzel Decorative", "Times New Roman", serif;
+  font-size: clamp(46px, 8vw, 112px);
+  line-height: 0.92;
+  letter-spacing: 0.04em;
+  color: #f2d8a8;
+  text-shadow: 0 0 22px rgba(230, 197, 151, 0.26), 0 6px 22px rgba(0, 0, 0, 0.72);
+`;
 
-  @media (max-width: 768px) {
-    font-size: 30px;
-    letter-spacing: 3px;
-    margin-top: 20px;
+const Status = styled(motion.div)`
+  justify-self: end;
+  width: 100%;
+  max-width: 300px;
+  padding: 18px 0 0;
+  border-top: 1px solid rgba(242, 216, 168, 0.32);
+
+  @media (max-width: 760px) {
+    justify-self: start;
+    max-width: none;
   }
 `;
 
-// 进度容器：定位在插画右下角
-const ProgressContainer = styled.div`
-  position: absolute;
-  right: 4%;
-  bottom: 4%;
+const StatusRow = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  color: rgba(255, 245, 223, 0.7);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 `;
 
-// 童话风圆角进度条外壳
 const ProgressBarWrap = styled.div`
-  width: 160px;
-  height: 8px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 999px;
-  overflow:hidden;
+  height: 3px;
+  margin-top: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.14);
 `;
 
-// 柔和童话填充色
 const ProgressFill = styled(motion.div)`
-  height:100%;
-  width:0%;
-  border-radius: 999px;
-  background: linear-gradient(90deg,#ffc8b8,#ffe8c2);
-  box-shadow: 0 0 6px rgba(255, 216, 175, 0.6);
-`;
-
-// 百分比文字
-const ProgressText = styled.span`
-  font-size:14px;
-  letter-spacing:1px;
-  color:#ffe9cc;
-  font-family:system-ui, sans-serif;
+  height: 100%;
+  background: linear-gradient(90deg, #f0c77a, #fff3cb, #8fb7d2);
+  box-shadow: 0 0 18px rgba(240, 199, 122, 0.8);
 `;
 
 export default function LoadingScreen({ progress, loaded, onComplete }) {
   const [canClose, setCanClose] = useState(false);
-  // 最大加载超时：8秒，防止资源卡死永久停留加载页
-  const MAX_LOAD_TIMEOUT = 8000;
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    // 最低停留2200ms
-    const minDisplayTime = setTimeout(() => {
-      setCanClose(true);
-    }, 2200);
-
-    // 兜底超时：8秒强制允许关闭加载界面
-    const forceTimeout = setTimeout(() => {
-      setCanClose(true);
-    }, MAX_LOAD_TIMEOUT);
+    const minDisplayTime = setTimeout(() => setCanClose(true), reduceMotion ? 250 : 700);
+    const forceTimeout = setTimeout(() => setCanClose(true), 3000);
 
     return () => {
       clearTimeout(minDisplayTime);
       clearTimeout(forceTimeout);
     };
-  }, []);
+  }, [reduceMotion]);
 
   useEffect(() => {
-    // 资源加载完成 OR 超时到达 + 最低等待时间结束，才允许退场
     if ((loaded || canClose) && canClose) {
-      setTimeout(() => {
-        onComplete();
-      }, 1100);
+      const closeTimer = setTimeout(onComplete, reduceMotion ? 80 : 420);
+      return () => clearTimeout(closeTimer);
     }
-  }, [loaded, canClose, onComplete]);
+  }, [loaded, canClose, onComplete, reduceMotion]);
+
+  const leaving = (loaded || canClose) && canClose;
 
   return (
     <LoaderWrap
       initial={{ y: 0 }}
-      animate={(loaded || canClose) && canClose ? { y: "-100%" } : { y: 0 }}
-      transition={{ duration: 1.2, ease: [0.76, 0, 0.24, 1] }}
+      animate={leaving ? { y: "-100%" } : { y: 0 }}
+      transition={{ duration: reduceMotion ? 0.08 : 0.72, ease: [0.76, 0, 0.24, 1] }}
     >
-      <FontInject />
-      {/* 外层容器包裹图片，进度条放在容器内，不再嵌套img */}
-      <ArtContainer>
-        <LoadArt
-          src="/assets/loading-game-art.jpg"
-          alt="loading illustration"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
-        />
-        <ProgressContainer>
+      <Backdrop />
+      <Panel initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+        <BrandBlock>
+          <Eyebrow initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+            Ignoredone personal archive
+          </Eyebrow>
+          <TitleText initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36, duration: 0.9 }}>
+            PaL,ve.Future Space
+          </TitleText>
+        </BrandBlock>
+        <Status initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.72 }}>
+          <StatusRow>
+            <span>Loading</span>
+            <span>{progress}%</span>
+          </StatusRow>
           <ProgressBarWrap>
-            <ProgressFill animate={{ width:`${progress}%`}} transition={{ease:"easeOut"}}/>
+            <ProgressFill animate={{ width: `${progress}%` }} transition={{ ease: "easeOut", duration: 0.3 }} />
           </ProgressBarWrap>
-          <ProgressText>{progress} %</ProgressText>
-        </ProgressContainer>
-      </ArtContainer>
-      <TitleText
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.55, duration: 0.9, ease: "easeOut" }}
-      >
-        The Fallen & The Virtuous
-      </TitleText>
+        </Status>
+      </Panel>
     </LoaderWrap>
   );
 }

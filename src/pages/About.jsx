@@ -1,3 +1,4 @@
+﻿import SubpageBackButton from "../components/SubpageBackButton";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { motion } from "framer-motion";
@@ -7,7 +8,15 @@ const Wrapper = styled.div`
   min-height: 100vh;
   overflow-x: hidden;
   color: #fff;
-  background: #06060c;
+  background-color: #05050a;
+  background-image:
+    linear-gradient(180deg, rgba(5, 5, 10, 0.68), rgba(5, 5, 10, 0.93)),
+    linear-gradient(90deg, rgba(239, 214, 162, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(239, 214, 162, 0.025) 1px, transparent 1px),
+    url("/assets/bg-banner.jpg");
+  background-position: center, center, center, center top;
+  background-size: auto, 72px 72px, 72px 72px, cover;
+  background-attachment: fixed;
 `;
 
 const NavBar = styled.nav`
@@ -120,6 +129,7 @@ export default function About() {
       <Container>
         <motion.div variants={staggerContainer} initial="hidden" animate="animate">
           <PageTitle variants={fadeUp}>About · 关于网页</PageTitle>
+          <SubpageBackButton />
           <ContentBlock variants={fadeUp}>
             <Paragraph>
               PaL,ve.Future Space — 创意收藏空间站。名称源自口号：<strong>Proletarier aller Länder, vereinigt euch!</strong>

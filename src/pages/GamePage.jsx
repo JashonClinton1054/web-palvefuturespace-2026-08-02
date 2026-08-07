@@ -1,3 +1,4 @@
+﻿import SubpageBackButton from "../components/SubpageBackButton";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -10,7 +11,15 @@ const Wrapper = styled.div`
   min-height: 100vh;
   overflow-x: hidden;
   color: #fff;
-  background: #06060c;
+  background-color: #05050a;
+  background-image:
+    linear-gradient(180deg, rgba(5, 5, 10, 0.68), rgba(5, 5, 10, 0.93)),
+    linear-gradient(90deg, rgba(239, 214, 162, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(239, 214, 162, 0.025) 1px, transparent 1px),
+    url("/assets/bg-banner.jpg");
+  background-position: center, center, center, center top;
+  background-size: auto, 72px 72px, 72px 72px, cover;
+  background-attachment: fixed;
   padding: 120px 20px 60px;
   @media (max-width:768px){
     padding: 100px 12px 40px;
@@ -503,9 +512,7 @@ const MiniGame = () => {
       wisdom:prev.wisdom + opt.attr.wisdom
     }))
     //负面选项扣血
-    let isBadChoice = false;
     if(opt.attr.energy < -4 || (opt.attr.luck < -4 && opt.attr.wisdom <3)){
-      isBadChoice = true;
       setHp(prev=>{
         const nextHp = prev -1
         if(nextHp <=0) setTimeout(()=>setStoryState("ending"),600)
@@ -538,13 +545,14 @@ const MiniGame = () => {
       <NavHeader>
         <motion.a onClick={()=>navigate("/")}>首页</motion.a>
         <motion.a onClick={()=>navigate("/about")}>关于网页</motion.a>
-        <motion.a onClick={()=>navigate("/projects")}>我的项目</motion.a>
+        <motion.a onClick={()=>navigate("/project")}>我的项目</motion.a>
       </NavHeader>
 
       <Container>
         <PageTitle initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.6}}>
           Mini Games
         </PageTitle>
+        <SubpageBackButton />
         <GameGrid>
           <GameCard
             whileHover={{scale:1.02}}

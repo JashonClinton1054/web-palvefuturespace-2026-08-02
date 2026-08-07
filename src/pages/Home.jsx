@@ -1,341 +1,127 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 
 const Wrapper = styled.div`
-  width: 100vw;
-  min-height: 100vh;
-  overflow-x: hidden;
-  color: #fff;
-  background: #06060c;
+  width: 100%; min-height: 100vh; overflow-x: hidden; color: #fff7e8; background: #05050a;
 `;
-
-const Header = styled.header`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 999;
-  padding: 32px 0;
-  transition: 0.3s ease;
+const Header = styled(motion.header)`
+  position: fixed; inset: 0 0 auto; z-index: 999; padding: 26px 0;
+  background: linear-gradient(180deg, rgba(5,5,10,.84), transparent); backdrop-filter: blur(10px);
 `;
-
 const Container = styled.div`
-  max-width: 1700px;
-  margin: 0 auto;
-  padding: 0 32px;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  @media (max-width: 768px) {
-    padding: 0 20px;
-  }
+  width: min(1680px, calc(100% - 64px)); margin: 0 auto;
+  @media(max-width:760px){width:min(100% - 32px,620px);}
 `;
-
+const NavInner = styled(Container)`display:flex;align-items:center;justify-content:space-between;gap:24px;`;
 const LogoText = styled.div`
-  font-family: "Cinzel Decorative", serif;
-  font-size: 20px;
-  letter-spacing: 2px;
-  color: #e6c597;
+  color:#efd6a2;font:500 18px "Cinzel Decorative","Times New Roman",serif;letter-spacing:.12em;white-space:nowrap;
+  @media(max-width:560px){font-size:15px;}
 `;
-
-const NavMenu = styled.div`
-  display: flex;
-  gap: 40px;
-  @media (max-width:768px){
-    gap:20px;
-  }
+const NavMenu = styled.nav`
+  display:flex;gap:24px;@media(max-width:760px){gap:13px;}@media(max-width:580px){button:nth-last-child(-n + 2){display:none;}}
 `;
-
-const NavLink = styled.span`
-  font-size: 15px;
-  opacity: ${props => props.active ? 1 : 0.75};
-  color: ${props => props.active ? "#e6c597" : "#ffffff"};
-  cursor: pointer;
-  transition: 0.25s ease;
-  user-select: none;
-  &:hover{
-    opacity:1;
-    color:#e6c597;
-  }
-  @media (max-width: 768px) {
-    font-size: 13px;
-  }
+const NavLink = styled.button`
+  border:0;padding:0;background:transparent;color:${p=>p.$active?"#efd6a2":"rgba(255,247,232,.72)"};font:inherit;font-size:14px;letter-spacing:.06em;cursor:pointer;
+  &:hover{color:#efd6a2;}@media(max-width:560px){font-size:12px;}
 `;
-
-const HeroSection = styled.section`
-  width: 100%;
-  height: 100vh;
-  position: relative;
-  overflow: hidden;
-`;
-
-const VideoCover = styled.div`
-  position: absolute;
-  inset: 0;
-  background: url("/assets/video-cover.jpg") center center / cover no-repeat;
-  video {
-    width:100%;
-    height:100%;
-    object-fit:cover;
-  }
-`;
-
+const HeroSection = styled.section`position:relative;min-height:100svh;display:grid;align-items:end;overflow:hidden;`;
+const VideoCover = styled.div`position:absolute;inset:0;background:url("/assets/video-cover.jpg") center/cover no-repeat;filter:saturate(.9) contrast(1.06) brightness(.78);`;
 const HeroMask = styled.div`
-  position:absolute;
-  inset:0;
-  background: rgba(6,6,12,0.45);
+  position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,3,8,.9),rgba(3,3,8,.34) 52%,rgba(3,3,8,.78)),linear-gradient(180deg,rgba(3,3,8,.2),rgba(3,3,8,.92));
 `;
-
-const HeroContent = styled(motion.div)`
-  position:absolute;
-  left:32px;
-  bottom:120px;
-  max-width:700px;
-  padding:0 32px;
-  @media (max-width:768px){
-    padding:0 20px;
-    left:0;
-  }
+const HeroContent = styled(Container)`
+  position:relative;z-index:1;padding:160px 0 94px;display:grid;grid-template-columns:minmax(0,780px) 280px;gap:56px;align-items:end;
+  @media(max-width:900px){grid-template-columns:1fr;gap:40px;}
 `;
-
+const HeroText = styled(motion.div)`text-align:left;`;
+const Eyebrow = styled.p`margin:0 0 18px;color:rgba(255,247,232,.58);font-size:12px;letter-spacing:.28em;text-transform:uppercase;`;
 const HeroTitle = styled.h1`
-  font-family: "Cinzel Decorative", serif;
-  font-size: 48px;
-  line-height: 1.2;
-  margin-bottom:16px;
-  color:#ffffff;
-  @media(max-width:768px){
-    font-size:32px;
-  }
+  margin:0;color:#f3dbab;font:500 clamp(46px,7vw,108px)/.96 "Cinzel Decorative","Times New Roman",serif;letter-spacing:.04em;
+  text-shadow:0 0 24px rgba(230,197,151,.25),0 10px 30px rgba(0,0,0,.72);
+`;
+const HeroDesc = styled.p`max-width:640px;margin:24px 0 0;color:rgba(255,247,232,.76);font-size:16px;line-height:1.9;`;
+const HeroActions = styled.div`display:flex;flex-wrap:wrap;gap:14px;margin-top:34px;`;
+const ActionButton = styled.button`
+  border:1px solid rgba(239,214,162,.45);border-radius:4px;padding:12px 18px;background:${p=>p.$primary?"rgba(239,214,162,.92)":"rgba(255,255,255,.04)"};color:${p=>p.$primary?"#08070c":"#f6e8cc"};cursor:pointer;letter-spacing:.06em;transition:.25s;
+  &:hover{transform:translateY(-2px);border-color:rgba(239,214,162,.85);background:${p=>p.$primary?"#f3dbab":"rgba(239,214,162,.1)"};}
+`;
+const StatusPanel = styled(motion.aside)`
+  border-left:1px solid rgba(239,214,162,.24);padding-left:24px;text-align:left;
+  @media(max-width:900px){border-left:0;padding-left:0;display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
+`;
+const Stat = styled.div`
+  padding:16px 0;border-bottom:1px solid rgba(255,255,255,.1);
+  strong{display:block;color:#f3dbab;font:500 26px "Cinzel Decorative","Times New Roman",serif;letter-spacing:.08em;}
+  span{display:block;margin-top:8px;color:rgba(255,247,232,.6);font-size:12px;letter-spacing:.08em;}
+`;
+const ScrollHint = styled.button`
+  position:absolute;left:50%;bottom:28px;z-index:2;transform:translateX(-50%);border:0;background:transparent;color:rgba(255,247,232,.54);cursor:pointer;font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+  &::after{content:"";display:block;width:1px;height:42px;margin:12px auto 0;background:linear-gradient(#efd6a2,transparent);}
+`;
+const WorksSection = styled.section`position:relative;padding:112px 0 130px;background-image:linear-gradient(rgba(239,214,162,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(239,214,162,.025) 1px,transparent 1px);background-size:72px 72px;`;
+const SectionHead = styled.div`
+  display:flex;justify-content:space-between;gap:40px;align-items:end;margin-bottom:42px;text-align:left;
+  h2{margin:0;color:#efd6a2;font:500 clamp(32px,4vw,56px) "Cinzel Decorative","Times New Roman",serif;letter-spacing:.06em;}
+  p{max-width:520px;margin:0;color:rgba(255,247,232,.62);line-height:1.8;}
+  @media(max-width:760px){display:block;p{margin-top:16px;}}
+`;
+const WorkGrid = styled.div`display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;@media(max-width:980px){grid-template-columns:repeat(2,minmax(0,1fr));}@media(max-width:640px){grid-template-columns:1fr;}`;
+const WorkCard = styled(motion.button)`
+  position:relative;min-height:430px;overflow:hidden;border:1px solid rgba(239,214,162,.16);border-radius:6px;padding:0;background:#0b0b12;text-align:left;cursor:pointer;
+  img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.78) brightness(.74);transition:transform .8s,filter .8s;}
+  &::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,5,10,.08),rgba(5,5,10,.9));}
+  &:hover img{transform:scale(1.08);filter:saturate(1) brightness(.9);}
+`;
+const CardText = styled.div`
+  position:absolute;left:24px;right:24px;bottom:24px;z-index:1;
+  small{color:rgba(255,247,232,.52);letter-spacing:.18em;text-transform:uppercase;}
+  h3{margin:10px 0 8px;color:#efd6a2;font:500 24px "Cinzel Decorative","Times New Roman",serif;}
+  p{margin:0;color:rgba(255,247,232,.72);line-height:1.7;font-size:14px;}
 `;
 
-const HeroDesc = styled.p`
-  font-size:16px;
-  opacity:0.8;
-  line-height:1.8;
-`;
+const workList = [
+  { img: "/assets/work-01.jpg", title: "Gallery", desc: "按年份与月份归档的个人图像收藏库。", route: "/gallery" },
+  { img: "/assets/work-02.jpg", title: "Animation Hall", desc: "原创动画、视觉短片与动态实验展厅。", route: "/animation" },
+  { img: "/assets/work-03.jpg", title: "Mini Game", desc: "轻量互动游戏入口，保留探索感和一点趣味。", route: "/game" },
+  { img: "/assets/work-04.jpg", title: "MBTI Test", desc: "十六人格测试与结果视觉化展示。", route: "/mbti" },
+  { img: "/assets/work-05.jpg", title: "Guest Signal", desc: "留下问候、灵感与雨夜短讯的访客通讯站。", route: "/guestbook" },
+  { img: "/assets/loading-game-art.jpg", title: "World Archive", desc: "读取空间概念、动态情报与运行状态。", route: "/world" },
+];
 
-const WorksSection = styled.section`
-  max-width:1700px;
-  margin:0 auto;
-  padding:140px 32px;
-  width:100%;
-  @media(max-width:768px){
-    padding:100px 20px;
-  }
-`;
+const headerVariants={hidden:{opacity:0,y:-18},enter:{opacity:1,y:0,transition:{duration:.7}}};
+const heroVariants={hidden:{opacity:0,y:28},enter:{opacity:1,y:0,transition:{delay:.25,duration:.85,ease:"easeOut"}}};
 
-const SectionHead = styled(motion.h2)`
-  font-family:"Cinzel Decorative",serif;
-  font-size:32px;
-  margin-bottom:60px;
-  color:#e6c597;
-`;
+export default function Home(){
+  const navigate=useNavigate();
+  const [activeSection,setActiveSection]=useState("hero");
+  const [stationTime,setStationTime]=useState(new Date());
 
-const WorkGrid = styled.div`
-  display:grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap:32px;
-  @media(max-width:768px){
-    grid-template-columns:1fr;
-  }
-`;
-
-const WorkCard = styled(motion.div)`
-  position:relative;
-  height:420px;
-  overflow:hidden;
-  cursor:pointer;
-  border-radius:6px;
-  img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    transition:0.6s ease;
-  }
-  &:hover img{
-    transform:scale(1.06);
-  }
-`;
-
-const CardMask = styled.div`
-  position:absolute;
-  inset:0;
-  background:linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%);
-  opacity:0;
-  transition:0.4s ease;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-end;
-  padding:32px;
-  ${WorkCard}:hover & {
-    opacity:1;
-  }
-`;
-
-const CardTitle = styled.h3`
-  font-family:"Cinzel Decorative",serif;
-  font-size:22px;
-  margin-bottom:8px;
-  color:#e6c597;
-`;
-const CardText = styled.p`
-  font-size:14px;
-  opacity:0.85;
-`;
-
-// 入场动画配置
-const headerVariants = {
-  hidden:{opacity:0,y:-20},
-  enter:{opacity:1,y:0,transition:{duration:0.7}}
-}
-const heroVariants = {
-  hidden:{opacity:0,y:30},
-  enter:{opacity:1,y:0,transition:{delay:0.6,duration:0.8}}
-}
-const sectionVariants = {
-  hidden:{opacity:0,y:24},
-  enter:{opacity:1,y:0,transition:{duration:0.6}}
-}
-const cardVariants = {
-  hidden:{opacity:0,y:30},
-  enter:{opacity:1,y:0}
-}
-
-export default function Home() {
-  const navigate = useNavigate();
-  // 视频延迟播放：首页先展示封面，3秒后启动视频，减少初始带宽抢占
-  const [videoPlayEnabled, setVideoPlayEnabled] = useState(false);
-  const [activeSection, setActiveSection] = useState("");
-  const sectionIds = ["hero", "works"];
-  const offset = 150;
-
-  // 视频延迟计时器
+  useEffect(()=>{const timer=window.setInterval(()=>setStationTime(new Date()),1000);return()=>window.clearInterval(timer)},[]);
   useEffect(()=>{
-    const videoTimer = setTimeout(()=>{
-      setVideoPlayEnabled(true);
-    }, 3000);
-    return ()=>clearTimeout(videoTimer);
-  },[])
+    const handleScroll=()=>{const hero=document.getElementById("hero");if(hero)setActiveSection(window.scrollY<hero.offsetHeight-160?"hero":"works")};
+    window.addEventListener("scroll",handleScroll);handleScroll();return()=>window.removeEventListener("scroll",handleScroll);
+  },[]);
+  const scrollToSection=id=>document.getElementById(id)?.scrollIntoView({behavior:"smooth"});
 
-  // 滚动导航高亮
-  useEffect(()=>{
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      let currentId = "";
-      for(const id of sectionIds){
-        const el = document.getElementById(id);
-        if(!el) continue;
-        const top = el.offsetTop - offset;
-        const bottom = top + el.offsetHeight;
-        if(scrollY >= top && scrollY < bottom){
-          currentId = id;
-          break;
-        }
-      }
-      setActiveSection(currentId);
-    }
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  },[])
-
-  // 页面内平滑滚动跳转
-  const scrollToSection = (id) => {
-    const dom = document.getElementById(id);
-    if(dom) dom.scrollIntoView({behavior:"smooth"});
-  }
-
-  // 作品卡片数据
-  const workList = [
-    {
-      img:"/assets/work-01.jpg",
-      title:"Gallery",
-      desc:"时间轴个人图库",
-      route:"/gallery"
-    },
-    {
-      img:"/assets/work-02.jpg",
-      title:"Animation Hall",
-      desc:"动画视频展厅",
-      route:"/animation"
-    },
-    {
-      img:"/assets/work-03.jpg",
-      title:"Mini Game",
-      desc:"趣味小游戏专区",
-      route:"/game"
-    },
-    {
-      img:"/assets/work-04.jpg",
-      title:"MBTI Test",
-      desc:"十六人格测试",
-      route:"/mbti"
-    }
-  ]
-
-  return (
-    <Wrapper>
-      <Header as={motion.header} variants={headerVariants} initial="hidden" animate="enter">
-        <Container>
-          <LogoText>PaL,ve.Future Space</LogoText>
-          <NavMenu>
-            <NavLink 
-              active={activeSection === "hero"}
-              onClick={()=>scrollToSection("hero")}
-            >首页</NavLink>
-            <NavLink onClick={()=>navigate("/about")}>关于网页</NavLink>
-            <NavLink onClick={()=>navigate("/project")}>我的项目</NavLink>
-          </NavMenu>
-        </Container>
-      </Header>
-
-      <HeroSection id="hero">
-        <VideoCover>
-          <video 
-            muted 
-            loop 
-            playsInline 
-            preload="metadata"
-            poster="/assets/video-cover.jpg"
-            autoPlay={videoPlayEnabled}
-          >
-            <source src="/assets/bg-video.mp4" type="video/mp4"/>
-          </video>
-        </VideoCover>
-        <HeroMask/>
-        <HeroContent variants={heroVariants} initial="hidden" animate="enter">
-          <HeroTitle>PaL,ve.Future Space</HeroTitle>
-          <HeroDesc>创意收藏空间站。全域可交互，融合动画、图库、趣味实验功能。</HeroDesc>
-        </HeroContent>
-      </HeroSection>
-
-      <WorksSection id="works">
-        <SectionHead variants={sectionVariants} initial="hidden" animate="enter">
-          精选功能入口
-        </SectionHead>
-        <WorkGrid>
-          {workList.map((item,idx)=>(
-            <WorkCard
-              key={idx}
-              variants={cardVariants}
-              initial="hidden"
-              animate="enter"
-              transition={{delay:0.25 + idx * 0.12}}
-              onClick={()=>navigate(item.route)}
-            >
-              <img src={item.img} alt={item.title}/>
-              <CardMask>
-                <CardTitle>{item.title}</CardTitle>
-                <CardText>{item.desc}</CardText>
-              </CardMask>
-            </WorkCard>
-          ))}
-        </WorkGrid>
-      </WorksSection>
-    </Wrapper>
-  )
+  return <Wrapper>
+    <Header variants={headerVariants} initial="hidden" animate="enter"><NavInner><LogoText>PaL,ve.Future Space</LogoText><NavMenu>
+      <NavLink $active={activeSection==="hero"} onClick={()=>scrollToSection("hero")}>首页</NavLink>
+      <NavLink $active={activeSection==="works"} onClick={()=>scrollToSection("works")}>入口</NavLink>
+      <NavLink onClick={()=>navigate("/guestbook")}>留言</NavLink><NavLink onClick={()=>navigate("/about")}>关于</NavLink><NavLink onClick={()=>navigate("/project")}>项目</NavLink>
+    </NavMenu></NavInner></Header>
+    <HeroSection id="hero"><VideoCover/><HeroMask/><HeroContent>
+      <HeroText variants={heroVariants} initial="hidden" animate="enter"><Eyebrow>Digital archive / visual playground</Eyebrow><HeroTitle>PaL,ve.Future Space</HeroTitle>
+        <HeroDesc>一个暗色、克制、带有科技童话气质的个人创意空间。这里收纳图像、动画、互动程序与人格测试，把作品集做成一座可以进入的数字展馆。</HeroDesc>
+        <HeroActions><ActionButton $primary onClick={()=>scrollToSection("works")}>进入展馆</ActionButton><ActionButton onClick={()=>navigate("/world")}>读取世界档案</ActionButton></HeroActions>
+      </HeroText>
+      <StatusPanel variants={heroVariants} initial="hidden" animate="enter"><Stat><strong>06</strong><span>主要功能入口</span></Stat><Stat><strong>16</strong><span>人格结果图谱</span></Stat><Stat><strong>∞</strong><span>持续扩展的作品归档</span></Stat><Stat><strong>{stationTime.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",hour12:false})}</strong><span>空间站本地时间</span></Stat></StatusPanel>
+    </HeroContent><ScrollHint onClick={()=>scrollToSection("works")}>Scroll</ScrollHint></HeroSection>
+    <WorksSection id="works"><Container><SectionHead><h2>Featured Gates</h2><p>选择一扇入口，进入图像、动画、互动实验、世界档案与旅人通讯共同构成的未来空间。</p></SectionHead>
+      <WorkGrid>{workList.map((item,idx)=><WorkCard key={item.title} initial={{opacity:0,y:28}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.28}} transition={{delay:idx*.08,duration:.55}} onClick={()=>navigate(item.route)}>
+        <img src={item.img} alt="" loading="lazy" decoding="async"/><CardText><small>Gate {String(idx+1).padStart(2,"0")}</small><h3>{item.title}</h3><p>{item.desc}</p></CardText>
+      </WorkCard>)}</WorkGrid>
+    </Container></WorksSection>
+  </Wrapper>;
 }
