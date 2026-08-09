@@ -107,19 +107,19 @@ export default function Home(){
 
   return <Wrapper>
     <Header variants={headerVariants} initial="hidden" animate="enter"><NavInner><LogoText>PaL,ve.Future Space</LogoText><NavMenu>
-      <NavLink $active={activeSection==="hero"} onClick={()=>scrollToSection("hero")}>首页</NavLink>
-      <NavLink $active={activeSection==="works"} onClick={()=>scrollToSection("works")}>入口</NavLink>
-      <NavLink onClick={()=>navigate("/guestbook")}>留言</NavLink><NavLink onClick={()=>navigate("/about")}>关于</NavLink><NavLink onClick={()=>navigate("/project")}>项目</NavLink>
+      <NavLink $active={activeSection==="hero"} data-track="nav-home" onClick={()=>scrollToSection("hero")}>首页</NavLink>
+      <NavLink $active={activeSection==="works"} data-track="nav-gates" onClick={()=>scrollToSection("works")}>入口</NavLink>
+      <NavLink data-track="nav-guestbook" onClick={()=>navigate("/guestbook")}>留言</NavLink><NavLink data-track="nav-about" onClick={()=>navigate("/about")}>关于</NavLink><NavLink data-track="nav-project" onClick={()=>navigate("/project")}>项目</NavLink>
     </NavMenu></NavInner></Header>
     <HeroSection id="hero"><VideoCover/><HeroMask/><HeroContent>
       <HeroText variants={heroVariants} initial="hidden" animate="enter"><Eyebrow>Digital archive / visual playground</Eyebrow><HeroTitle>PaL,ve.Future Space</HeroTitle>
         <HeroDesc>一个暗色、克制、带有科技童话气质的个人创意空间。这里收纳图像、动画、互动程序与人格测试，把作品集做成一座可以进入的数字展馆。</HeroDesc>
-        <HeroActions><ActionButton $primary onClick={()=>scrollToSection("works")}>进入展馆</ActionButton><ActionButton onClick={()=>navigate("/world")}>读取世界档案</ActionButton></HeroActions>
+        <HeroActions><ActionButton $primary data-track="hero-enter" onClick={()=>scrollToSection("works")}>进入展馆</ActionButton><ActionButton data-track="hero-world" onClick={()=>navigate("/world")}>读取世界档案</ActionButton></HeroActions>
       </HeroText>
       <StatusPanel variants={heroVariants} initial="hidden" animate="enter"><Stat><strong>06</strong><span>主要功能入口</span></Stat><Stat><strong>16</strong><span>人格结果图谱</span></Stat><Stat><strong>∞</strong><span>持续扩展的作品归档</span></Stat><Stat><strong>{stationTime.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",hour12:false})}</strong><span>空间站本地时间</span></Stat></StatusPanel>
     </HeroContent><ScrollHint onClick={()=>scrollToSection("works")}>Scroll</ScrollHint></HeroSection>
     <WorksSection id="works"><Container><SectionHead><h2>Featured Gates</h2><p>选择一扇入口，进入图像、动画、互动实验、世界档案与旅人通讯共同构成的未来空间。</p></SectionHead>
-      <WorkGrid>{workList.map((item,idx)=><WorkCard key={item.title} initial={{opacity:0,y:28}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.28}} transition={{delay:idx*.08,duration:.55}} onClick={()=>navigate(item.route)}>
+      <WorkGrid>{workList.map((item,idx)=><WorkCard key={item.title} data-track={`gate-${item.route.slice(1)}`} initial={{opacity:0,y:28}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.28}} transition={{delay:idx*.08,duration:.55}} onClick={()=>navigate(item.route)}>
         <img src={item.img} alt="" loading="lazy" decoding="async"/><CardText><small>Gate {String(idx+1).padStart(2,"0")}</small><h3>{item.title}</h3><p>{item.desc}</p></CardText>
       </WorkCard>)}</WorkGrid>
     </Container></WorksSection>

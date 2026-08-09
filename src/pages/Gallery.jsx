@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled, { keyframes } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
+import { trackEvent } from "../lib/supabase";
 
 const Wrapper = styled.div`
   width: 100vw;
@@ -525,6 +526,7 @@ export default function Gallery() {
 
     const isCorrect = festivalAnswer === "端午节" && birthMonth === "3" && birthDay === "3";
     setGateStatus(isCorrect ? "success" : "error");
+    void trackEvent("gallery_gate_attempt", { result: isCorrect ? "success" : "error" });
 
     window.setTimeout(() => {
       if (isCorrect) setGalleryUnlocked(true);
@@ -535,6 +537,7 @@ export default function Gallery() {
   const openYear = (year) => {
     setCurrentYear(year);
     setViewLevel("month");
+    void trackEvent("gallery_open_year", { year });
   };
 
   const openMonth = (year, month) => {
@@ -543,6 +546,7 @@ export default function Gallery() {
     setCurrentMonth(month);
     setPhotoList(monthImagesMap[key] || []);
     setViewLevel("photo");
+    void trackEvent("gallery_open_month", { year, month });
   };
 
   const goBack = () => {

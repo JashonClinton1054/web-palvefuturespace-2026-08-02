@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { motion } from "framer-motion";
+import { supabase, trackEvent, visitorId } from "../lib/supabase";
 
 const Shell = styled.main`
   min-height: 100vh;
@@ -339,6 +340,24 @@ const Submit = styled.button`
   }
 `;
 
+const SignalStatus = styled.p`
+  min-height: 20px;
+  margin: 12px 0 0;
+  color: ${(props) => (props.$warning ? "#f0b98b" : "rgba(239, 214, 162, 0.68)")};
+  font-size: 10px;
+  line-height: 1.6;
+  letter-spacing: 0.06em;
+`;
+
+const Honeypot = styled.label`
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+`;
+
 const Log = styled.div`
   min-width: 0;
   padding: clamp(22px, 3vw, 38px);
@@ -460,6 +479,9 @@ export default function Guestbook() {
   const [text, setText] = useState("");
   const [channel, setChannel] = useState("问候");
   const [sent, setSent] = useState(false);
+  const [website, setWebsite] = useState("");
+  const [loading, setLoading] = useState(Boolean(supabase));
+  const [submitState, setSubmitState] = useState(supabase ? "ready" : "offline");
   const [messages, setMessages] = useState(() => {
     try {
       const saved = window.localStorage.getItem("palve-guestbook");
@@ -478,16 +500,80 @@ export default function Guestbook() {
     window.localStorage.setItem("palve-guestbook", JSON.stringify(messages));
   }, [messages]);
 
-  const submit = (event) => {
+  useEffect(() => {
+    if (!supabase) return undefined;
+    let active = true;
+
+    supabase
+      .from("guestbook_messages")
+      .select("id, display_name, channel, message, likes, created_at")
+      .order("created_at", { ascending: false })
+      .limit(12)
+      .then(({ data, error }) => {
+        if (!active) return;
+        setLoading(false);
+        if (error) {
+          setSubmitState("offline");
+          return;
+        }
+
+        const remoteMessages = data.map((item) => ({
+          id: item.id,
+          name: item.display_name,
+          channel: item.channel,
+          text: item.message,
+          likes: item.likes,
+          date: new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" })
+            .format(new Date(item.created_at))
+            .replaceAll("/", "."),
+        }));
+        setMessages((current) => [...current.filter((item) => item.pending), ...remoteMessages]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const submit = async (event) => {
     event.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim() || website) return;
     const date = new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" })
       .format(new Date())
       .replaceAll("/", ".");
-    setMessages((current) => [
-      { id: Date.now(), name: name.trim() || "ANONYMOUS", channel, text: text.trim(), date, likes: 0 },
-      ...current,
-    ]);
+    const pendingMessage = {
+      id: `pending-${Date.now()}`,
+      name: name.trim() || "ANONYMOUS",
+      channel,
+      text: text.trim(),
+      date,
+      likes: 0,
+      pending: Boolean(supabase),
+    };
+
+    setSubmitState("sending");
+    if (supabase) {
+      const { error } = await supabase.from("guestbook_messages").insert({
+        visitor_id: visitorId,
+        display_name: pendingMessage.name,
+        channel,
+        message: pendingMessage.text,
+        status: "pending",
+        likes: 0,
+      });
+
+      if (error) {
+        pendingMessage.pending = false;
+        setSubmitState("offline");
+      } else {
+        setSubmitState("queued");
+        void trackEvent("guestbook_submit", { channel, length: pendingMessage.text.length });
+      }
+    } else {
+      setSubmitState("offline");
+    }
+
+    setMessages((current) => [pendingMessage, ...current]);
     setName("");
     setText("");
     setSent(true);
@@ -498,6 +584,7 @@ export default function Guestbook() {
     setMessages((current) => current.map((item) => (
       item.id === id ? { ...item, likes: item.likes + 1 } : item
     )));
+    void trackEvent("guestbook_like", { message_id: String(id).slice(0, 48) });
   };
 
   return (
@@ -534,11 +621,15 @@ export default function Guestbook() {
       <Content>
         <ContentHead>
           <h2>Transmission Log</h2>
-          <p>LOCAL ARCHIVE / STORED IN THIS BROWSER</p>
+          <p>{loading ? "CONNECTING TO ARCHIVE" : "MODERATED PUBLIC ARCHIVE"}</p>
         </ContentHead>
         <Board>
           <Form onSubmit={submit}>
             <TerminalBar><span>NEW TRANSMISSION</span><span>PALVE-05</span></TerminalBar>
+            <Honeypot aria-hidden="true">
+              Website
+              <input value={website} onChange={(event) => setWebsite(event.target.value)} autoComplete="off" tabIndex={-1} />
+            </Honeypot>
             <Label>
               <span>CALL SIGN / 署名</span>
               <input value={name} onChange={(event) => setName(event.target.value)} maxLength={24} placeholder="ANONYMOUS" />
@@ -558,7 +649,14 @@ export default function Guestbook() {
                 <small>{text.length} / 180</small>
               </TextAreaWrap>
             </Label>
-            <Submit type="submit" disabled={!text.trim()}>{sent ? "SIGNAL RECEIVED" : "SEND TRANSMISSION  →"}</Submit>
+            <Submit type="submit" disabled={!text.trim() || submitState === "sending"} data-track="guestbook-send">
+              {submitState === "sending" ? "TRANSMITTING…" : sent ? "SIGNAL RECEIVED" : "SEND TRANSMISSION  →"}
+            </Submit>
+            <SignalStatus $warning={submitState === "offline"} aria-live="polite">
+              {submitState === "queued" && "信号已抵达，经过简单整理后会出现在公共频道。"}
+              {submitState === "offline" && "轨道连接有些安静，这条信号已暂存在当前设备。"}
+              {submitState === "ready" && "短讯会先进入待整理队列，不会立即公开。"}
+            </SignalStatus>
           </Form>
 
           <Log>
@@ -569,7 +667,10 @@ export default function Guestbook() {
                 <div>
                   <header><strong>{message.name}</strong><time>{message.date}</time></header>
                   <p>{message.text}</p>
-                  <footer><span>#{message.channel}</span><button type="button" onClick={() => like(message.id)} aria-label="喜欢这条留言">♡ {message.likes}</button></footer>
+                  <footer>
+                    <span>#{message.channel}{message.pending ? " · 待整理" : ""}</span>
+                    <button type="button" onClick={() => like(message.id)} aria-label="喜欢这条留言" disabled={message.pending}>♡ {message.likes}</button>
+                  </footer>
                 </div>
               </Message>
             ))}

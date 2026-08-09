@@ -6,6 +6,7 @@ import CustomCursor from "./components/CustomCursor";
 import LoadingScreen from "./components/LoadingScreen";
 import MouseParticles from "./components/MouseParticles";
 import SpaceNavigator from "./components/SpaceNavigator";
+import AnalyticsTracker from "./components/AnalyticsTracker";
 
 const galleryAssets = [
   "/assets/work-01.jpg",
@@ -86,6 +87,7 @@ function App() {
       <MouseParticles />
       <BrowserRouter>
         <RouteScrollHandler />
+        <AnalyticsTracker />
         <SpaceNavigator />
         <AppRouter />
       </BrowserRouter>

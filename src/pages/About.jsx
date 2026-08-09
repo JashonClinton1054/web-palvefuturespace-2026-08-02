@@ -148,6 +148,12 @@ export default function About() {
             <Paragraph>
               全站采用暗黑极简视觉体系，同时适配电脑大屏与移动端访问体验。
             </Paragraph>
+            <SubTitle>数据与访客信号</SubTitle>
+            <Paragraph>
+              为了了解哪些展厅更常被使用，本站会记录匿名随机标识、会话、页面路径与有限的交互事件，
+              不记录图库验证答案、留言输入过程或精确位置。启用 Global Privacy Control 或 Do Not Track
+              的浏览器不会发送行为事件；公开留言会先进入整理队列，再决定是否展示。
+            </Paragraph>
           </ContentBlock>
         </motion.div>
       </Container>

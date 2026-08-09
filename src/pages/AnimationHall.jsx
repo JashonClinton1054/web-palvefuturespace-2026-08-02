@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
+import { trackEvent } from "../lib/supabase";
 
 const Wrapper = styled.div`
   width: 100vw;
@@ -244,6 +245,11 @@ export default function AnimationHall() {
     setActiveVideo(null);
   };
 
+  const openPlayer = (item) => {
+    setActiveVideo(item);
+    void trackEvent("animation_play", { title: item.title });
+  };
+
   return (
     <Wrapper>
       <NavBar>
@@ -265,7 +271,7 @@ export default function AnimationHall() {
               <VideoCard
                 key={idx}
                 variants={fadeUp}
-                onClick={() => setActiveVideo(item)}
+                onClick={() => openPlayer(item)}
               >
                 <img loading="lazy" decoding="async" src={item.poster} alt={item.title} />
                 <CardLabel>
