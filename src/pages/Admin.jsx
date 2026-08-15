@@ -109,6 +109,11 @@ const Segment = styled.div`
   }
   button:last-child { border-right: 0; }
   button[aria-pressed="true"] { color: #090a0d; background: #edcf97; }
+
+  @media (max-width: 640px) {
+    width: 100%;
+    button { min-width: 0; flex: 1 1 20%; }
+  }
 `;
 
 const Metrics = styled.section`
@@ -226,16 +231,33 @@ const Empty = styled.p`
   font-size: 12px;
 `;
 
+const Notice = styled.p`
+  margin: 0 0 20px;
+  border-left: 2px solid rgba(237, 207, 151, 0.62);
+  padding: 10px 14px;
+  color: rgba(247, 242, 232, 0.52);
+  background: rgba(237, 207, 151, 0.035);
+  font-size: 11px;
+  line-height: 1.75;
+`;
+
 const TABS = [
   ["overview", "概览"],
   ["geography", "地区"],
   ["devices", "设备"],
+  ["visits", "访问明细"],
   ["moderation", "留言审核"],
   ["security", "异常访问"],
 ];
 
 const asNumber = (value) => Number(value || 0);
 const maxOf = (rows, key) => Math.max(1, ...rows.map((row) => asNumber(row[key])));
+const localDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 function Bars({ rows, label, value = "events" }) {
   const max = maxOf(rows, value);
@@ -260,6 +282,7 @@ export default function Admin() {
   const [tab, setTab] = useState("overview");
   const [snapshot, setSnapshot] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [visits, setVisits] = useState([]);
 
   const loadAdmin = useCallback(async (user) => {
     if (!supabase || !user) { setPhase("login"); return; }
@@ -280,21 +303,32 @@ export default function Admin() {
   const refresh = useCallback(async () => {
     if (!supabase || phase !== "ready") return;
     setError("");
-    const end = new Date();
-    const start = new Date(end.getTime() - days * 86400000);
-    const [analytics, queue] = await Promise.all([
-      supabase.rpc("admin_analytics_snapshot", { p_from: start.toISOString(), p_to: end.toISOString() }),
+    const now = new Date();
+    const endDay = new Date(now);
+    endDay.setDate(endDay.getDate() + 1);
+    const startDay = days === "all" ? null : new Date(now.getTime() - (days - 1) * 86400000);
+    const [analytics, queue, recentVisits] = await Promise.all([
+      supabase.rpc("admin_analytics_history_snapshot", {
+        p_from: startDay ? localDate(startDay) : null,
+        p_to: localDate(endDay),
+      }),
       supabase.from("guestbook_messages")
         .select("id,display_name,channel,message,status,created_at,approved_at")
         .order("created_at", { ascending: false })
         .limit(100),
+      supabase.rpc("admin_recent_visits", {
+        p_from: new Date(now.getTime() - 30 * 86400000).toISOString(),
+        p_to: new Date(now.getTime() + 60000).toISOString(),
+        p_limit: 200,
+      }),
     ]);
-    if (analytics.error || queue.error) {
+    if (analytics.error || queue.error || recentVisits.error) {
       setError("统计链路暂时没有响应，请稍后刷新。 ");
       return;
     }
     setSnapshot(analytics.data);
     setMessages(queue.data || []);
+    setVisits(recentVisits.data || []);
   }, [days, phase]);
 
   useEffect(() => {
@@ -340,7 +374,7 @@ export default function Admin() {
     const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? "").replaceAll('"', '""')}"`).join(",")).join("\r\n");
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
-    link.download = `palve-analytics-${days}d.csv`;
+    link.download = `palve-analytics-${days === "all" ? "all" : `${days}d`}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
   };
@@ -374,14 +408,14 @@ export default function Admin() {
       </HeaderInner></Header>
       <Main>
         <Heading><div><h1>Control Room</h1><p>{profile?.display_name || profile?.email} · 仅显示脱敏统计</p></div>
-          <Segment aria-label="日期范围">{[[1, "今日"], [7, "7 天"], [30, "30 天"]].map(([value, label]) => (
+          <Segment aria-label="日期范围">{[[1, "今日"], [7, "7 天"], [30, "30 天"], [90, "90 天"], ["all", "全部"]].map(([value, label]) => (
             <button key={value} aria-pressed={days === value} onClick={() => setDays(value)}>{label}</button>
           ))}</Segment>
         </Heading>
         {error && <Empty role="alert">{error}</Empty>}
         <Metrics>
           <Metric><span>页面浏览</span><strong>{asNumber(overview.page_views).toLocaleString("zh-CN")}</strong></Metric>
-          <Metric><span>独立访客</span><strong>{asNumber(overview.visitors).toLocaleString("zh-CN")}</strong></Metric>
+          <Metric><span>独立访客（日去重）</span><strong>{asNumber(overview.visitors).toLocaleString("zh-CN")}</strong></Metric>
           <Metric><span>会话</span><strong>{asNumber(overview.sessions).toLocaleString("zh-CN")}</strong></Metric>
           <Metric><span>图库通过率</span><strong>{galleryRate}</strong></Metric>
           <Metric><span>待审核留言</span><strong>{pendingCount}</strong></Metric>
@@ -394,11 +428,12 @@ export default function Admin() {
         {tab === "overview" && <Grid>
           <Panel><h2>热门页面</h2><Bars rows={snapshot?.pages || []} label={(row) => row.path} value="page_views" /></Panel>
           <Panel><h2>来源网站</h2><Bars rows={snapshot?.referrers || []} label={(row) => row.referrer_host} /></Panel>
-          <Panel><h2>每日浏览</h2><Bars rows={snapshot?.daily || []} label={(row) => row.activity_day} value="page_views" /></Panel>
-          <Panel><h2>隐私窗口</h2><Empty>匿名原始事件保存 30 天后汇总删除；历史登录记录中的完整 IP 与 User-Agent 最长保留 7 天。</Empty></Panel>
+          <Panel><h2>每日浏览（最近 14 个有数据的日期）</h2><Bars rows={(snapshot?.daily || []).slice(-14)} label={(row) => row.activity_day} value="page_views" /></Panel>
+          <Panel><h2>历史与隐私窗口</h2><Empty>页面、地区、设备和来源的按日汇总永久保留；可识别单次访问的脱敏明细只保存 30 天。跨日访客数为每日去重人数之和。</Empty></Panel>
         </Grid>}
 
         {tab === "geography" && <Panel><h2>国家 / 地区 / 城市（IP 推断，可能不准确）</h2>
+          <Notice>Cloudflare 的边缘定位不提供可靠街道地址。本站不会调用第三方精确定位服务，也不会把大致城市包装成街道，以免形成对个人的精确追踪。</Notice>
           <TableWrap><Table><thead><tr><th>国家</th><th>省 / 州</th><th>城市</th><th>事件</th><th>访客</th></tr></thead><tbody>
             {(snapshot?.geography || []).map((row, index) => <tr key={`${row.country_code}-${row.region}-${row.city}-${index}`}><td>{row.country_code}</td><td>{row.region}</td><td>{row.city}</td><td>{row.events}</td><td>{row.visitors}</td></tr>)}
           </tbody></Table></TableWrap></Panel>}
@@ -407,6 +442,21 @@ export default function Admin() {
           <TableWrap><Table><thead><tr><th>设备</th><th>浏览器</th><th>系统</th><th>事件</th><th>访客</th></tr></thead><tbody>
             {(snapshot?.devices || []).map((row, index) => <tr key={`${row.device_type}-${row.browser}-${row.os}-${index}`}><td>{row.device_type}</td><td>{row.browser}</td><td>{row.os}</td><td>{row.events}</td><td>{row.visitors}</td></tr>)}
           </tbody></Table></TableWrap></Panel>}
+
+        {tab === "visits" && <Panel><h2>最近 30 天访问明细（最多显示 200 条）</h2>
+          <Notice>“访问指纹”是服务端使用秘密盐值生成的不可逆短指纹，并不是原始 IP，也无法还原 IP。明细到期后删除，但不含指纹的按日汇总会永久保留。</Notice>
+          <TableWrap><Table style={{ minWidth: 1180 }}><thead><tr><th>时间</th><th>访问指纹</th><th>事件 / 页面</th><th>国家 / 地区 / 城市</th><th>时区 / 网络</th><th>设备环境</th><th>来源</th><th>标记</th></tr></thead><tbody>
+            {visits.map((row, index) => <tr key={`${row.occurred_at}-${row.fingerprint}-${index}`}>
+              <td>{new Date(row.occurred_at).toLocaleString("zh-CN")}</td>
+              <td>{row.fingerprint}</td>
+              <td>{row.event_name}{row.event_result ? ` · ${row.event_result}` : ""}<br />{row.path}</td>
+              <td>{[row.country_code, row.region, row.city].filter(Boolean).join(" / ")}</td>
+              <td>{row.timezone}<br />{row.network}</td>
+              <td>{[row.device_type, row.browser, row.os].filter(Boolean).join(" / ")}</td>
+              <td>{row.referrer_host}</td>
+              <td>{row.suspected_bot ? "疑似机器人" : "正常"}</td>
+            </tr>)}
+          </tbody></Table></TableWrap>{!visits.length && <Empty>最近 30 天还没有访问明细。</Empty>}</Panel>}
 
         {tab === "moderation" && <Panel><h2>留言审核</h2>
           <TableWrap><Table><thead><tr><th>时间</th><th>署名</th><th>频道</th><th>内容</th><th>状态</th><th>操作</th></tr></thead><tbody>
@@ -421,4 +471,3 @@ export default function Admin() {
     </Shell>
   );
 }
-
