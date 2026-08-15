@@ -150,9 +150,11 @@ export default function About() {
             </Paragraph>
             <SubTitle>数据与访客信号</SubTitle>
             <Paragraph>
-              为了了解哪些展厅更常被使用，本站会记录匿名随机标识、会话、页面路径与有限的交互事件，
-              不记录图库验证答案、留言输入过程或精确位置。启用 Global Privacy Control 或 Do Not Track
-              的浏览器不会发送行为事件；公开留言会先进入整理队列，再决定是否展示。
+              为了了解哪些展厅更常被使用，本站会记录匿名随机标识、会话、页面路径、有限交互事件，以及由
+              Cloudflare 在边缘端提供的国家、地区、可能不准确的城市与设备类别。IP 只在服务端转换为带秘密盐值的
+              不可逆指纹，不在页面或公开接口中显示；不采集街道、精确位置、图库答案、留言输入过程、密码或邮箱。
+              启用 Global Privacy Control 或 Do Not Track 的浏览器不会发送行为事件。匿名原始事件保存 30 天后聚合删除，
+              旧登录安全记录中的完整 IP 最长保存 7 天；公开留言会先进入整理队列，再决定是否展示。
             </Paragraph>
           </ContentBlock>
         </motion.div>

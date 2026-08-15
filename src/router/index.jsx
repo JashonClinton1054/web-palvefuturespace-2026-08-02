@@ -12,6 +12,7 @@ const About = lazy(() => import("../pages/About"));
 const Project = lazy(() => import("../pages/Project"));
 const Guestbook = lazy(() => import("../pages/Guestbook"));
 const WorldArchive = lazy(() => import("../pages/WorldArchive"));
+const Admin = lazy(() => import("../pages/Admin"));
 
 const RouteLoading = () => (
   <div
@@ -53,6 +54,7 @@ const AppRouter = () => {
           <Route path="/guestbook" element={<PageTransition><Guestbook /></PageTransition>} />
           <Route path="/mbti" element={<PageTransition><MbtiPage /></PageTransition>} />
           <Route path="/world" element={<PageTransition><WorldArchive /></PageTransition>} />
+          <Route path="/admin" element={<Admin />} />
         </Routes>
       </Suspense>
     </AnimatePresence>

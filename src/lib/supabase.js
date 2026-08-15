@@ -8,9 +8,9 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKe
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabasePublishableKey, {
       auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
       },
     })
   : null;
@@ -52,7 +52,7 @@ const cleanMetadata = (metadata) => Object.fromEntries(
 );
 
 export const trackEvent = async (eventName, metadata = {}) => {
-  if (!supabase || !trackingAllowed) return;
+  if (!trackingAllowed) return false;
 
   let referrerHost = null;
   try {
@@ -62,12 +62,47 @@ export const trackEvent = async (eventName, metadata = {}) => {
     referrerHost = null;
   }
 
-  await supabase.from("site_events").insert({
-    visitor_id: visitorId,
-    session_id: sessionId,
-    event_name: eventName.slice(0, 48),
-    path: window.location.pathname.slice(0, 160),
-    referrer_host: referrerHost,
-    metadata: cleanMetadata(metadata),
-  });
+  try {
+    const response = await fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_id: createUuid(),
+        visitor_id: visitorId,
+        session_id: sessionId,
+        event_name: eventName.slice(0, 48),
+        path: window.location.pathname.slice(0, 160),
+        referrer_host: referrerHost,
+        metadata: cleanMetadata(metadata),
+        occurred_at: new Date().toISOString(),
+      }),
+      credentials: "same-origin",
+      keepalive: true,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
+
+export const submitGuestbookMessage = async ({ displayName, channel, message, turnstileToken }) => {
+  try {
+    const response = await fetch("/api/guestbook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        request_id: createUuid(),
+        visitor_id: visitorId,
+        display_name: displayName,
+        channel,
+        message,
+        turnstile_token: turnstileToken,
+      }),
+      credentials: "same-origin",
+    });
+    const result = await response.json().catch(() => ({}));
+    return { ok: response.ok, status: response.status, ...result };
+  } catch {
+    return { ok: false, status: 0, code: "network_error" };
+  }
 };

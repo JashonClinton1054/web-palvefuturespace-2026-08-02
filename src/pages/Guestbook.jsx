@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { supabase, trackEvent, visitorId } from "../lib/supabase";
+import TurnstileWidget from "../components/TurnstileWidget";
+import { submitGuestbookMessage, supabase, trackEvent } from "../lib/supabase";
 
 const Shell = styled.main`
   min-height: 100vh;
@@ -358,6 +359,11 @@ const Honeypot = styled.label`
   white-space: nowrap;
 `;
 
+const Verification = styled.div`
+  min-height: 44px;
+  margin: -4px 0 16px;
+`;
+
 const Log = styled.div`
   min-width: 0;
   padding: clamp(22px, 3vw, 38px);
@@ -480,6 +486,8 @@ export default function Guestbook() {
   const [channel, setChannel] = useState("问候");
   const [sent, setSent] = useState(false);
   const [website, setWebsite] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReset, setTurnstileReset] = useState(0);
   const [loading, setLoading] = useState(Boolean(supabase));
   const [submitState, setSubmitState] = useState(supabase ? "ready" : "offline");
   const [messages, setMessages] = useState(() => {
@@ -537,7 +545,7 @@ export default function Guestbook() {
 
   const submit = async (event) => {
     event.preventDefault();
-    if (!text.trim() || website) return;
+    if (!text.trim() || website || !turnstileToken) return;
     const date = new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" })
       .format(new Date())
       .replaceAll("/", ".");
@@ -553,29 +561,32 @@ export default function Guestbook() {
 
     setSubmitState("sending");
     if (supabase) {
-      const { error } = await supabase.from("guestbook_messages").insert({
-        visitor_id: visitorId,
-        display_name: pendingMessage.name,
+      const result = await submitGuestbookMessage({
+        displayName: pendingMessage.name,
         channel,
         message: pendingMessage.text,
-        status: "pending",
-        likes: 0,
+        turnstileToken,
       });
 
-      if (error) {
-        pendingMessage.pending = false;
-        setSubmitState("offline");
-      } else {
+      if (result.ok) {
         setSubmitState("queued");
         void trackEvent("guestbook_submit", { channel, length: pendingMessage.text.length });
+      } else {
+        setSubmitState(result.status === 429 ? "cooldown" : result.code === "turnstile_failed" ? "verify" : "offline");
+        setTurnstileToken("");
+        setTurnstileReset((value) => value + 1);
+        return;
       }
     } else {
       setSubmitState("offline");
+      return;
     }
 
     setMessages((current) => [pendingMessage, ...current]);
     setName("");
     setText("");
+    setTurnstileToken("");
+    setTurnstileReset((value) => value + 1);
     setSent(true);
     window.setTimeout(() => setSent(false), 1800);
   };
@@ -649,12 +660,17 @@ export default function Guestbook() {
                 <small>{text.length} / 180</small>
               </TextAreaWrap>
             </Label>
-            <Submit type="submit" disabled={!text.trim() || submitState === "sending"} data-track="guestbook-send">
+            <Verification>
+              <TurnstileWidget onVerify={setTurnstileToken} resetKey={turnstileReset} />
+            </Verification>
+            <Submit type="submit" disabled={!text.trim() || !turnstileToken || submitState === "sending"} data-track="guestbook-send">
               {submitState === "sending" ? "TRANSMITTING…" : sent ? "SIGNAL RECEIVED" : "SEND TRANSMISSION  →"}
             </Submit>
-            <SignalStatus $warning={submitState === "offline"} aria-live="polite">
+            <SignalStatus $warning={["offline", "cooldown", "verify"].includes(submitState)} aria-live="polite">
               {submitState === "queued" && "信号已抵达，经过简单整理后会出现在公共频道。"}
-              {submitState === "offline" && "轨道连接有些安静，这条信号已暂存在当前设备。"}
+              {submitState === "offline" && "轨道连接有些安静，这条信号暂时没有发出，请稍后再试。"}
+              {submitState === "cooldown" && "信号来得有点密，稍等一会儿再发送吧。"}
+              {submitState === "verify" && "安全验证刚刚走神了，重新确认一下就好。"}
               {submitState === "ready" && "短讯会先进入待整理队列，不会立即公开。"}
             </SignalStatus>
           </Form>

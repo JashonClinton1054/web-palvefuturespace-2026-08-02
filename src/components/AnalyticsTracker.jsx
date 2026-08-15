@@ -37,6 +37,15 @@ export default function AnalyticsTracker() {
 
   useEffect(() => {
     if (!isSupabaseConfigured || !trackingAllowed) return undefined;
+    const startedAt = performance.now();
+    return () => {
+      const durationSeconds = Math.min(3600, Math.max(1, Math.round((performance.now() - startedAt) / 1000)));
+      void trackEvent("page_leave", { duration_seconds: durationSeconds });
+    };
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !trackingAllowed) return undefined;
     const onClick = (event) => {
       const target = event.target.closest?.("[data-track]");
       if (!target) return;
