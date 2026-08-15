@@ -3,13 +3,17 @@ import { useEffect, useRef } from "react";
 const SCRIPT_ID = "palve-turnstile-script";
 const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
-const loadTurnstile = () => new Promise((resolve, reject) => {
+const loadTurnstileOnce = () => new Promise((resolve, reject) => {
   if (window.turnstile) {
     resolve(window.turnstile);
     return;
   }
 
   let script = document.getElementById(SCRIPT_ID);
+  if (script?.dataset.failed === "true") {
+    script.remove();
+    script = null;
+  }
   if (!script) {
     script = document.createElement("script");
     script.id = SCRIPT_ID;
@@ -19,19 +23,35 @@ const loadTurnstile = () => new Promise((resolve, reject) => {
     document.head.appendChild(script);
   }
 
-  const timeout = window.setTimeout(() => reject(new Error("turnstile-timeout")), 10000);
-  const poll = window.setInterval(() => {
-    if (!window.turnstile) return;
+  const cleanup = () => {
     window.clearTimeout(timeout);
     window.clearInterval(poll);
+  };
+  const timeout = window.setTimeout(() => {
+    script.dataset.failed = "true";
+    cleanup();
+    reject(new Error("turnstile-timeout"));
+  }, 10000);
+  const poll = window.setInterval(() => {
+    if (!window.turnstile) return;
+    cleanup();
     resolve(window.turnstile);
   }, 80);
   script.addEventListener("error", () => {
-    window.clearTimeout(timeout);
-    window.clearInterval(poll);
+    script.dataset.failed = "true";
+    cleanup();
     reject(new Error("turnstile-load-failed"));
   }, { once: true });
 });
+
+const loadTurnstile = async () => {
+  try {
+    return await loadTurnstileOnce();
+  } catch {
+    await new Promise((resolve) => window.setTimeout(resolve, 500));
+    return loadTurnstileOnce();
+  }
+};
 
 export default function TurnstileWidget({ onVerify, resetKey }) {
   const containerRef = useRef(null);
@@ -53,7 +73,7 @@ export default function TurnstileWidget({ onVerify, resetKey }) {
           sitekey: SITE_KEY,
           theme: "dark",
           size: "flexible",
-          appearance: "interaction-only",
+          appearance: "always",
           callback: (token) => onVerify(token),
           "expired-callback": () => onVerify(""),
           "error-callback": () => onVerify(""),
