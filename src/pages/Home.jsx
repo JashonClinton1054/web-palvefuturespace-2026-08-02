@@ -86,8 +86,8 @@ const workList = [
   { img: "/assets/work-02.jpg", title: "Animation Hall", desc: "原创动画、视觉短片与动态实验展厅。", route: "/animation" },
   { img: "/assets/work-03.jpg", title: "Mini Game", desc: "轻量互动游戏入口，保留探索感和一点趣味。", route: "/game" },
   { img: "/assets/work-04.jpg", title: "MBTI Test", desc: "十六人格测试与结果视觉化展示。", route: "/mbti" },
-  { img: "/assets/work-05.jpg", title: "Guest Signal", desc: "留下问候、灵感与雨夜短讯的访客通讯站。", route: "/guestbook" },
-  { img: "/assets/loading-game-art.jpg", title: "World Archive", desc: "读取空间概念、动态情报与运行状态。", route: "/world" },
+  { img: "/assets/work-07.jpg", title: "Guest Signal", desc: "留下问候、灵感与雨夜短讯的访客通讯站。", route: "/guestbook" },
+  { img: "/assets/work-06.jpg", title: "World Archive", desc: "读取空间概念、动态情报与运行状态。", route: "/world" },
 ];
 
 const headerVariants={hidden:{opacity:0,y:-18},enter:{opacity:1,y:0,transition:{duration:.7}}};

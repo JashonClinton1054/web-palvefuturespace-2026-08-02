@@ -28,3 +28,7 @@ node_modules/
 *.mov
 *.webm
 .vscode/
+
+# Local asset-processing and visual QA artifacts
+tmp/
+public/assets/MiniGame/game-03-source.png

@@ -42,9 +42,10 @@ function App() {
   const [loaderVisible, setLoaderVisible] = useState(!alreadyVisited);
 
   useEffect(() => {
+    const gatePaths = new Set(["/gallery", "/animation", "/game", "/mbti", "/guestbook", "/world"]);
     const criticalAssets = window.location.pathname === "/"
       ? ["/assets/loading-game-art.jpg", "/assets/video-cover.jpg"]
-      : ["/assets/loading-game-art.jpg", "/assets/bg-banner.jpg"];
+      : ["/assets/loading-game-art.jpg", gatePaths.has(window.location.pathname) ? "/assets/bg-banner2.jpg" : "/assets/bg-banner.jpg"];
 
     if (alreadyVisited) return;
 

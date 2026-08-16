@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { createPortal } from "react-dom";
+import BbqGame from "../components/BbqGame";
 
 // ====================== 样式定义 ======================
 const Wrapper = styled.div`
@@ -16,12 +17,13 @@ const Wrapper = styled.div`
     linear-gradient(180deg, rgba(5, 5, 10, 0.68), rgba(5, 5, 10, 0.93)),
     linear-gradient(90deg, rgba(239, 214, 162, 0.035) 1px, transparent 1px),
     linear-gradient(rgba(239, 214, 162, 0.025) 1px, transparent 1px),
-    url("/assets/bg-banner.jpg");
+    url("/assets/bg-banner2.jpg");
   background-position: center, center, center, center top;
   background-size: auto, 72px 72px, 72px 72px, cover;
   background-attachment: fixed;
   padding: 120px 20px 60px;
   @media (max-width:768px){
+    background-attachment: scroll;
     padding: 100px 12px 40px;
   }
 `;
@@ -150,6 +152,7 @@ const PlayerChar = styled(motion.img)`
     width:80px;
   }
   pointer-events:none;
+  filter: drop-shadow(0 8px 12px rgba(0,0,0,.68)) drop-shadow(0 0 1px #090912);
 `;
 const FoodItem = styled(motion.img)`
   position:absolute;
@@ -157,6 +160,7 @@ const FoodItem = styled(motion.img)`
   @media(max-width:768px){
     width:46px;
   }
+  filter: drop-shadow(0 5px 7px rgba(0,0,0,.72)) drop-shadow(0 0 1px #090912);
 `;
 const ScorePanel = styled.div`
   padding:12px 20px;
@@ -187,6 +191,7 @@ const CharSide = styled.div`
   border-right:1px solid #222;
   img{
     width:160px;
+    filter: drop-shadow(0 12px 18px rgba(0,0,0,.62)) drop-shadow(0 0 1px #090912);
     @media(max-width:768px){
       width:110px;
     }
@@ -240,21 +245,21 @@ const EndTitle = styled.h2`
 // ====================== 素材路径【完全匹配你的文件夹】 ======================
 const SPRITE_PATH = "/assets/MiniGame/sprite/";
 const FOOD_LIST = [
-  {name:"烤肉",src:`${SPRITE_PATH}food_meat.png`,score:15,isBad:false},
-  {name:"蛋糕",src:`${SPRITE_PATH}food_cake.png`,score:10,isBad:false},
-  {name:"面包",src:`${SPRITE_PATH}food_bread.png`,score:6,isBad:false},
-  {name:"浆果",src:`${SPRITE_PATH}food_berry.png`,score:8,isBad:false},
-  {name:"矿石",src:`${SPRITE_PATH}rock.png`,score:-12,isBad:true},
-  {name:"深渊雾气",src:`${SPRITE_PATH}abyss_mist.png`,score:-18,isBad:true},
+  {name:"烤肉",src:`${SPRITE_PATH}food_meat.webp`,score:15,isBad:false},
+  {name:"蛋糕",src:`${SPRITE_PATH}food_cake.webp`,score:10,isBad:false},
+  {name:"面包",src:`${SPRITE_PATH}food_bread.webp`,score:6,isBad:false},
+  {name:"浆果",src:`${SPRITE_PATH}food_berry.webp`,score:8,isBad:false},
+  {name:"矿石",src:`${SPRITE_PATH}rock.webp`,score:-12,isBad:true},
+  {name:"深渊雾气",src:`${SPRITE_PATH}abyss_mist.webp`,score:-18,isBad:true},
 ];
 // 根据分数切换艾克莉西娅表情
 const getEkSpriteByScore = (score)=>{
-  if(score <= -20) return `${SPRITE_PATH}ek_angry.png`
-  if(score < 20) return `${SPRITE_PATH}ek_sad.png`
-  if(score <60) return `${SPRITE_PATH}ek_normal.png`
-  if(score <100) return `${SPRITE_PATH}ek_smile.png`
-  if(score <160) return `${SPRITE_PATH}ek_happy.png`
-  return `${SPRITE_PATH}ek_full.png`
+  if(score <= -20) return `${SPRITE_PATH}ek_angry.webp`
+  if(score < 20) return `${SPRITE_PATH}ek_sad.webp`
+  if(score <60) return `${SPRITE_PATH}ek_normal.webp`
+  if(score <100) return `${SPRITE_PATH}ek_smile.webp`
+  if(score <160) return `${SPRITE_PATH}ek_happy.webp`
+  return `${SPRITE_PATH}ek_full.webp`
 }
 
 // 题库
@@ -478,13 +483,13 @@ const MiniGame = () => {
   const [attr,setAttr] = useState({energy:0,luck:0,wisdom:0})
   const [usedIndex,setUsedIndex] = useState([]); // 记录已出题索引，杜绝重复
   const [currentQ,setCurrentQ] = useState(null);
-  const [ekStoryImg,setEkStoryImg] = useState(`${SPRITE_PATH}ek_normal.png`)
+  const [ekStoryImg,setEkStoryImg] = useState(`${SPRITE_PATH}ek_normal.webp`)
 
   const resetStoryGame = ()=>{
     setHp(5);
     setAttr({energy:0,luck:0,wisdom:0});
     setUsedIndex([]);
-    setEkStoryImg(`${SPRITE_PATH}ek_normal.png`)
+    setEkStoryImg(`${SPRITE_PATH}ek_normal.webp`)
   }
   const startStoryGame = ()=>{
     resetStoryGame();
@@ -502,7 +507,7 @@ const MiniGame = () => {
     const randomIdx = availableIndex[Math.floor(Math.random()*availableIndex.length)]
     setUsedIndex(prev=>[...prev,randomIdx])
     setCurrentQ(STORY_QUESTIONS[randomIdx])
-    setEkStoryImg(`${SPRITE_PATH}ek_normal.png`)
+    setEkStoryImg(`${SPRITE_PATH}ek_normal.webp`)
   }
 
   const selectOption = (opt)=>{
@@ -518,9 +523,9 @@ const MiniGame = () => {
         if(nextHp <=0) setTimeout(()=>setStoryState("ending"),600)
         return nextHp
       })
-      setEkStoryImg(`${SPRITE_PATH}ek_sad.png`)
+      setEkStoryImg(`${SPRITE_PATH}ek_sad.webp`)
     }else if(opt.attr.energy >=6 || opt.attr.luck >=6){
-      setEkStoryImg(`${SPRITE_PATH}ek_smile.png`)
+      setEkStoryImg(`${SPRITE_PATH}ek_smile.webp`)
     }
     setTimeout(()=>{
       if(storyState === "playing") pickNextQuestion()
@@ -572,6 +577,16 @@ const MiniGame = () => {
             <CardText>
               <CardTitle>阿不思的陪伴大作战</CardTitle>
               <CardDesc>城市日常叙事选择，不同抉择改变精力、运气、智慧数值，走向多种结局。留意艾克莉西娅的状态变化。</CardDesc>
+            </CardText>
+          </GameCard>
+          <GameCard
+            whileHover={{scale:1.02}}
+            onClick={()=>setOpenGame("bbq")}
+          >
+            <CardImg src="/assets/MiniGame/game-03.webp" alt="帮艾克莉西娅烤肉吧" loading="lazy" decoding="async"/>
+            <CardText>
+              <CardTitle>帮艾克莉西娅烤肉吧</CardTitle>
+              <CardDesc>观察肉片颜色、油脂与烟气，调整火候并把握翻面和装盘时机。三轮烤制，挑战最高总分。</CardDesc>
             </CardText>
           </GameCard>
         </GameGrid>
@@ -703,6 +718,16 @@ const MiniGame = () => {
                 </div>
               </div>
             )}
+          </GameBox>
+        </GameModalWrap>,
+        modalRoot
+      )}
+
+      {openGame === "bbq" && createPortal(
+        <GameModalWrap initial={{opacity:0}} animate={{opacity:1}}>
+          <GameBox role="dialog" aria-modal="true" aria-label="帮艾克莉西娅烤肉吧">
+            <CloseBtn aria-label="关闭烤肉游戏" onClick={()=>setOpenGame(null)}>✕</CloseBtn>
+            <BbqGame />
           </GameBox>
         </GameModalWrap>,
         modalRoot

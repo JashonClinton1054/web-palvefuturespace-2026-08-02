@@ -23,7 +23,7 @@ const Wrapper = styled.main`
 `;
 const Hero = styled.section`
   position: relative; min-height: 76svh; padding: 150px max(32px, 5vw) 70px; display: flex; align-items: end;
-  background: url("/assets/bg-banner.jpg") center 22% / cover no-repeat;
+  background: url("/assets/bg-banner2.jpg") center 22% / cover no-repeat;
   &::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,3,8,.94) 0%, rgba(3,3,8,.42) 62%, rgba(3,3,8,.78)), linear-gradient(0deg, #05050a 0%, transparent 58%); }
   &::after { content: ""; position: absolute; inset: 0; opacity: .18; background-image: linear-gradient(rgba(239,214,162,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(239,214,162,.1) 1px, transparent 1px); background-size: 72px 72px; }
   @media (max-width: 700px) { min-height: 68svh; padding: 128px 20px 46px; }

@@ -14,13 +14,14 @@ const Wrapper = styled.div`
     linear-gradient(180deg, rgba(5, 5, 10, 0.68), rgba(5, 5, 10, 0.93)),
     linear-gradient(90deg, rgba(239, 214, 162, 0.035) 1px, transparent 1px),
     linear-gradient(rgba(239, 214, 162, 0.025) 1px, transparent 1px),
-    url("/assets/bg-banner.jpg");
+    url("/assets/bg-banner2.jpg");
   background-position: center, center, center, center top;
   background-size: auto, 72px 72px, 72px 72px, cover;
   background-attachment: fixed;
   color: #ffffff;
   padding: 120px 20px 60px;
   @media(max-width:768px){
+    background-attachment: scroll;
     padding: 100px 16px 40px;
   }
 `;
